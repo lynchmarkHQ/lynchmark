@@ -34,19 +34,21 @@
     </footer>
   </main>
   <script>
-    const form=document.getElementById('unsub-form'),msg=document.getElementById('msg');
+    const form=document.getElementById('unsub-form'),msg=document.getElementById('msg'),input=document.getElementById('email'),
+      q=new URLSearchParams(location.search).get('email')?.trim().replace(/ /g,'+');
     form.onsubmit=async e=>{
       e.preventDefault();
       msg.className='text-center text-sm text-gray-500';
       msg.textContent='Processing...';
       msg.classList.remove('hidden');
       try{
-        const r=await fetch('https://newsletter.planetrenox.com/api/unsub',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({pool:'lynchmark',email:document.getElementById('email').value})});
+        const r=await fetch('https://newsletter.planetrenox.com/api/unsub',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({pool:'lynchmark',email:input.value.trim()})});
         const d=await r.json();
-        if(d.ok){msg.textContent='✓ Unsubscribed';msg.className='text-center text-sm text-green-600';}
+        if(d.ok){msg.textContent=`✓ ${d.email} unsubscribed`;msg.className='text-center text-sm text-green-600';history.replaceState(null,'',location.pathname);}
         else{msg.textContent=d.error||'Error';msg.className='text-center text-sm text-red-600';}
       }catch{msg.textContent='Network error';msg.className='text-center text-sm text-red-600';}
     };
+    if(q)input.value=q,form.requestSubmit();
   </script>
 </body>
 </html>
