@@ -9,8 +9,6 @@ import Anthropic from '@anthropic-ai/sdk';
 const CWD = process.cwd();
 const [README, TESTS] = ['README', 'tests'].map(f => path.join(CWD, f));
 const getArg = n => { const i = process.argv.indexOf(n); return i > -1 ? process.argv[i + 1] : null; };
-const isGemini = process.argv.includes('--gemini');
-const OUT_DIR_NAME = isGemini ? 'outputs_gemini' : 'outputs';
 const label = spec => spec.replace(/\s+API:\S+/g, '');
 const fileOf = spec => `${label(spec).replace(/[\/:]/g, '_')}.js`;
 let anthropic;
@@ -30,12 +28,6 @@ const anthropicCall = async (prompt, model, effort) => {
 
 const apiCall = async (prompt, model, temp, effort, api) => {
   if (api === 'anthropic') return anthropicCall(prompt, model, effort);
-  if (isGemini) {
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${process.env.GOOGLE_KEY}`;
-    const body = { contents: [{ parts: [{ text: prompt }] }], generationConfig: { temperature: temp } };
-    const res = await axios.post(url, body);
-    return res.data.candidates[0].content.parts[0].text;
-  }
   const res = await axios.post(
     'https://openrouter.ai/api/v1/chat/completions',
     { 
@@ -86,8 +78,7 @@ const verify = async (page, code, testCode) => {
 
 const main = async () => {
   const readme = await fs.readFile(README, 'utf-8');
-  const regex = isGemini ? /<!-- GEMINI_START -->\n([\s\S]+?)\n<!-- MODELS_END -->/ : /<!-- MODELS_START -->\n([\s\S]+?)\n<!-- MODELS_END -->/;
-  const allModels = readme.match(regex)[1].trim().split('\n').filter(Boolean);
+  const allModels = readme.match(/<!-- MODELS_START -->\n([\s\S]+?)\n<!-- MODELS_END -->/)[1].trim().split('\n').filter(Boolean);
   const pct = parseInt(readme.match(/RUN_PERCENTAGE:\s*(\d+)/)?.[1] ?? '100', 10);
   const shared = readme.match(/SHARED_PROMPT:\s*"([\s\S]+?)"/)?.[1] ?? '';
   
@@ -118,7 +109,7 @@ const main = async () => {
 
   if (sTest && !targetTests.length) throw new Error(`No valid tests found for "${sTest}"`);
 
-  const clean = dir => fs.rm(path.join(TESTS, dir, OUT_DIR_NAME, sModel ? fileOf(models[0]) : ''), { recursive: !sModel, force: true });
+  const clean = dir => fs.rm(path.join(TESTS, dir, 'outputs', sModel ? fileOf(models[0]) : ''), { recursive: !sModel, force: true });
   await Promise.all(targetTests.map(clean));
 
   const browser = await chromium.launch();
@@ -137,7 +128,7 @@ const main = async () => {
       const { prompt, functionName } = (await import(pathToFileURL(testPath))).default;
       const testCode = await fs.readFile(testPath, 'utf-8');
 
-      console.log(`Gen ${dir} for ${mSpec} in ${OUT_DIR_NAME}...`);
+      console.log(`Gen ${dir} for ${mSpec}...`);
       const res = await getLlmCode(`${shared}\n\n${prompt.trim()}`, model, functionName, temp, eStr, aStr);
       
       if (!res) continue;
@@ -145,7 +136,7 @@ const main = async () => {
       const result = await verify(page, res.code, testCode);
       console.log(`  -> ${result}`);
 
-      const outDir = path.join(TESTS, dir, OUT_DIR_NAME);
+      const outDir = path.join(TESTS, dir, 'outputs');
       await fs.mkdir(outDir, { recursive: true });
       await fs.writeFile(path.join(outDir, fileOf(mSpec)), `${res.code}\n// Result: ${result}`);
     }

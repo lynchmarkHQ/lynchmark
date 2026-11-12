@@ -7,7 +7,7 @@ const TESTS_DIR = path.join(CWD, 'tests');
 
 async function main() {
   const readme = await fs.readFile(README_PATH, 'utf-8');
-  const modelBlocks = readme.match(/<!-- (?:MODELS|GEMINI)_START -->\n([\s\S]+?)\n<!-- MODELS_END -->/g) || [];
+  const modelBlocks = readme.match(/<!-- MODELS_START -->\n([\s\S]+?)\n<!-- MODELS_END -->/g) || [];
   
   const validFilenames = new Set();
   modelBlocks.forEach(block => {
@@ -32,20 +32,18 @@ async function main() {
   let deletedCount = 0;
 
   for (const dir of testDirs) {
-    for (const outSubDir of ['outputs', 'outputs_gemini']) {
-      const outPath = path.join(TESTS_DIR, dir, outSubDir);
-      try {
-        const files = await fs.readdir(outPath);
-        for (const file of files) {
-          if (file.endsWith('.js') && !validFilenames.has(file)) {
-            console.log(`Deleting stale output: ${dir}/${outSubDir}/${file}`);
-            await fs.unlink(path.join(outPath, file));
-            deletedCount++;
-          }
+    const outPath = path.join(TESTS_DIR, dir, 'outputs');
+    try {
+      const files = await fs.readdir(outPath);
+      for (const file of files) {
+        if (file.endsWith('.js') && !validFilenames.has(file)) {
+          console.log(`Deleting stale output: ${dir}/outputs/${file}`);
+          await fs.unlink(path.join(outPath, file));
+          deletedCount++;
         }
-      } catch (e) {
-        // Directory does not exist, move on
       }
+    } catch (e) {
+      // Directory does not exist, move on
     }
   }
 
