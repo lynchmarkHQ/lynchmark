@@ -10,14 +10,14 @@
   <meta name="description" content="Lynchmark tests LLMs by requiring correct CDN imports and library-specific implementations to solve challenging browser-based JavaScript tasks.">
   <meta property="og:description" content="Lynchmark tests LLMs by requiring correct CDN imports and library-specific implementations to solve challenging browser-based JavaScript tasks.">
   <meta property="og:type" content="website">
-  <meta property="og:url" content="https://lynchmark.com/">
-  <link rel="canonical" href="https://lynchmark.com/">
+  <meta property="og:url" content="https://lynchmark.planetrenox.com/">
+  <link rel="canonical" href="https://lynchmark.planetrenox.com/">
   <script type="application/ld+json">
   {
     "@context":"https://schema.org",
     "@type":"WebSite",
     "name":"Lynchmark",
-    "url":"https://lynchmark.com/",
+    "url":"https://lynchmark.planetrenox.com/",
     "description":"Lynchmark – an automated benchmark for LLM coding abilities in a real browser+CDN environment."
   }
   </script>
@@ -55,7 +55,7 @@
 
     <footer class="mt-10 flex justify-center">
       <a
-        href="https://github.com/multipleof4/lynchmark"
+        href="https://github.com/lynchmarkHQ/lynchmark"
         class="inline-flex items-center gap-2 text-gray-600 hover:text-gray-900"
         target="_blank"
         rel="noopener noreferrer"
@@ -74,7 +74,7 @@
           0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2
           0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8z"/>
         </svg>
-        <span class="mono text-xs font-medium">@multipleof4/lynchmark</span>
+        <span class="mono text-xs font-medium">@lynchmarkHQ/lynchmark</span>
       </a>
     </footer>
   </main>
@@ -92,7 +92,7 @@
       const readme=await fetch('./README').then(r=>r.text());
       const models=readme.match(/<!-- MODELS_START -->\n([\s\S]+?)\n<!-- MODELS_END -->/)[1].trim().split('\n');
       
-      const testsRes=await fetch('https://api.github.com/repos/multipleof4/lynchmark/contents/tests');
+      const testsRes=await fetch('https://api.github.com/repos/lynchmarkHQ/lynchmark/contents/tests');
       const testsData=await testsRes.json();
       const tests=testsData.filter(d=>d.type==='dir').map(d=>d.name).sort((a,b)=>parseInt(a)-parseInt(b));
 

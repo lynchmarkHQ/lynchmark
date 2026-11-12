@@ -29,7 +29,7 @@ const apiCall = async (prompt, model, temp, effort) => {
     { 
       headers: { 
         Authorization: `Bearer ${process.env.OPENROUTER_KEY}`,
-        'HTTP-Referer': 'https://lynchmark.com',
+        'HTTP-Referer': 'https://lynchmark.planetrenox.com',
         'X-Title': 'Lynchmark'
       } 
     }
