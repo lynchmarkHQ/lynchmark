@@ -15,8 +15,8 @@ dashes (anthropic/claude-fable-5.2 -> claude-fable-5-2). The flag is not shown o
 file names, and TEMP is ignored with it.
 
 <!-- MODELS_START -->
-anthropic/claude-fable-5.2 API:anthropic
-anthropic/claude-opus-5.5 API:anthropic
+anthropic/claude-fable-5.2 EFF:xhigh API:anthropic
+anthropic/claude-opus-5.5 EFF:xhigh API:anthropic
 google/gemini-3.8-flash EFF:high
 google/gemini-3.7-flash EFF:high
 moonshotai/kimi-k3 EFF:medium
