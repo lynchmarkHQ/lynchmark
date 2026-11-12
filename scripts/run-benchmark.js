@@ -4,14 +4,32 @@ import { pathToFileURL } from 'url';
 import axios from 'axios';
 import { performance } from 'perf_hooks';
 import { chromium } from 'playwright';
+import Anthropic from '@anthropic-ai/sdk';
 
 const CWD = process.cwd();
 const [README, TESTS] = ['README', 'tests'].map(f => path.join(CWD, f));
 const getArg = n => { const i = process.argv.indexOf(n); return i > -1 ? process.argv[i + 1] : null; };
 const isGemini = process.argv.includes('--gemini');
 const OUT_DIR_NAME = isGemini ? 'outputs_gemini' : 'outputs';
+const label = spec => spec.replace(/\s+API:\S+/g, '');
+const fileOf = spec => `${label(spec).replace(/[\/:]/g, '_')}.js`;
+let anthropic;
 
-const apiCall = async (prompt, model, temp, effort) => {
+const anthropicCall = async (prompt, model, effort) => {
+  const msg = await (anthropic ??= new Anthropic()).messages.stream({
+    model: model.replace(/^anthropic\//, '').replace(/\./g, '-'),
+    max_tokens: 64000,
+    messages: [{ role: 'user', content: prompt }],
+    ...(effort && { output_config: { effort } })
+  }).finalMessage();
+  const { input_tokens: i, output_tokens: o } = msg.usage;
+  console.log(`  ${msg.model} ${msg.stop_reason} in:${i} out:${o}`);
+  if (msg.stop_reason === 'refusal') throw new Error(`Refused (${msg.stop_details?.category ?? 'unknown'})`);
+  return msg.content.filter(b => b.type === 'text').map(b => b.text).join('');
+};
+
+const apiCall = async (prompt, model, temp, effort, api) => {
+  if (api === 'anthropic') return anthropicCall(prompt, model, effort);
   if (isGemini) {
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${process.env.GOOGLE_KEY}`;
     const body = { contents: [{ parts: [{ text: prompt }] }], generationConfig: { temperature: temp } };
@@ -41,10 +59,10 @@ const apiCall = async (prompt, model, temp, effort) => {
   return res.data.choices[0].message.content;
 };
 
-const getLlmCode = async (prompt, model, funcName, temp, effort) => {
+const getLlmCode = async (prompt, model, funcName, temp, effort, api) => {
   const start = performance.now();
   try {
-    const content = await apiCall(prompt, model, temp, effort);
+    const content = await apiCall(prompt, model, temp, effort, api);
     const duration = (performance.now() - start) / 1000;
     const code = content.match(/```(?:javascript|js)?\n([\s\S]+?)\n```/)?.[1].trim() ?? content.trim();
     const clean = code.replace(/export\s+default\s+.*$/m, '');
@@ -75,8 +93,8 @@ const main = async () => {
   
   const sModel = getArg('--model');
   const sTest = getArg('--test');
-  if (sModel && !allModels.includes(sModel)) throw new Error(`Model "${sModel}" not found in README.`);
-  const models = sModel ? [sModel] : allModels;
+  const models = sModel ? allModels.filter(m => m === sModel || label(m) === sModel) : allModels;
+  if (sModel && !models.length) throw new Error(`Model "${sModel}" not found in README.`);
 
   const testDirs = (await fs.readdir(TESTS, { withFileTypes: true }))
     .filter(d => d.isDirectory())
@@ -100,7 +118,7 @@ const main = async () => {
 
   if (sTest && !targetTests.length) throw new Error(`No valid tests found for "${sTest}"`);
 
-  const clean = dir => fs.rm(path.join(TESTS, dir, OUT_DIR_NAME, sModel ? `${sModel.replace(/[\/:]/g, '_')}.js` : ''), { recursive: !sModel, force: true });
+  const clean = dir => fs.rm(path.join(TESTS, dir, OUT_DIR_NAME, sModel ? fileOf(models[0]) : ''), { recursive: !sModel, force: true });
   await Promise.all(targetTests.map(clean));
 
   const browser = await chromium.launch();
@@ -111,6 +129,7 @@ const main = async () => {
     const model = parts[0];
     const tStr = parts.find(p => p.startsWith('TEMP:'))?.split(':')[1];
     const eStr = parts.find(p => p.startsWith('EFF:'))?.split(':')[1];
+    const aStr = parts.find(p => p.startsWith('API:'))?.split(':')[1];
     const temp = tStr ? parseFloat(tStr) : undefined;
     
     for (const dir of targetTests) {
@@ -119,7 +138,7 @@ const main = async () => {
       const testCode = await fs.readFile(testPath, 'utf-8');
 
       console.log(`Gen ${dir} for ${mSpec} in ${OUT_DIR_NAME}...`);
-      const res = await getLlmCode(`${shared}\n\n${prompt.trim()}`, model, functionName, temp, eStr);
+      const res = await getLlmCode(`${shared}\n\n${prompt.trim()}`, model, functionName, temp, eStr, aStr);
       
       if (!res) continue;
 
@@ -128,7 +147,7 @@ const main = async () => {
 
       const outDir = path.join(TESTS, dir, OUT_DIR_NAME);
       await fs.mkdir(outDir, { recursive: true });
-      await fs.writeFile(path.join(outDir, `${mSpec.replace(/[\/:]/g, '_')}.js`), `${res.code}\n// Result: ${result}`);
+      await fs.writeFile(path.join(outDir, fileOf(mSpec)), `${res.code}\n// Result: ${result}`);
     }
   }
   await browser.close();

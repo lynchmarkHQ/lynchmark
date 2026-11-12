@@ -32,10 +32,11 @@ jobs:
         run: npm start -- --model "${{ inputs.model_name }}"
         env:
           OPENROUTER_KEY: ${{ secrets.OPENROUTER_KEY }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           
       - name: Commit and push if changed
         run: |
           git config --global user.name 'github-actions[bot]'
           git config --global user.email 'github-actions[bot]@users.noreply.github.com'
           git add README tests
-          git diff --staged --quiet || (git commit -m "Docs: Update benchmark for ${{ inputs.model_name }}" && git push)
+          git diff --staged --quiet || (git commit -m "Docs: Update benchmark for ${{ inputs.model_name }}" && git pull --rebase && git push)

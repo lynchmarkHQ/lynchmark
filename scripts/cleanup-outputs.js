@@ -15,7 +15,7 @@ async function main() {
     lines.forEach(line => {
       const trimmed = line.trim();
       if (trimmed) {
-        validFilenames.add(`${trimmed.replace(/[\/:]/g, '_')}.js`);
+        validFilenames.add(`${trimmed.replace(/\s+API:\S+/g, '').replace(/[\/:]/g, '_')}.js`);
       }
     });
   });

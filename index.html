@@ -96,7 +96,8 @@
       const testsData=await testsRes.json();
       const tests=testsData.filter(d=>d.type==='dir').map(d=>d.name).sort((a,b)=>parseInt(a)-parseInt(b));
 
-      for(const model of models){
+      for(const spec of models){
+        const model=spec.replace(/\s+API:\S+/g,'');
         const sModel=model.replace(/[\/:]/g,'_');
         const card=document.createElement('section');
         card.className='rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden';

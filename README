@@ -8,7 +8,15 @@ SHARED_PROMPT: "Provide production-ready and maintainable JavaScript code. Apply
 
 The following models are included in the benchmark run.
 
+Optional flags after a model name: TEMP:<n> sets temperature, EFF:<level> sets reasoning effort.
+API:anthropic calls the Anthropic API directly (ANTHROPIC_API_KEY) instead of OpenRouter. Keep the
+OpenRouter name; the Anthropic model id is that name without "anthropic/" and with dots turned into
+dashes (anthropic/claude-fable-5.2 -> claude-fable-5-2). The flag is not shown on the site or in output
+file names, and TEMP is ignored with it.
+
 <!-- MODELS_START -->
+anthropic/claude-fable-5.2 API:anthropic
+anthropic/claude-opus-5.5 API:anthropic
 google/gemini-3.8-flash EFF:high
 google/gemini-3.7-flash EFF:high
 moonshotai/kimi-k3 EFF:medium
